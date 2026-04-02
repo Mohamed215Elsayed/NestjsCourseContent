@@ -1,5 +1,6 @@
 import {
-    Body, Controller, Delete, Get, HttpCode, HttpStatus, NotFoundException, Param, ParseIntPipe, Patch, Post, Req, Res
+    BadRequestException,
+    Body, Controller, Delete, ForbiddenException, ParseUUIDPipe, Get, HttpCode, HttpStatus, NotFoundException, Param, ParseIntPipe, Patch, Post, Req, Res, ValidationPipe, UsePipes, Query
 }
     from "@nestjs/common";
 import type {
@@ -22,35 +23,67 @@ import {
     v4 as uuidv4
 }
     from 'uuid';
+import { CustomValidationPipe } from "./pipes/validation.pipe";
 
+// @UsePipes(ValidationPipe)//validation pipe on controller level
 @Controller("api/v1/users") export class UsersController {
     /*****************/
     private readonly users: UserEntity[] = [];
     /*****************/
-    @Get() @HttpCode(200)/*  find(): string[] {
+    /*  @Get() @HttpCode(200) */
+    /*  find(): string[] {
          return ["ali", "mo", "rana", "wafaa"]
      } */
+    @Get() @HttpCode(200)
     find(): UserEntity[] {
         return this.users;
-    }
+    } 
+    //ex on custom validation pipe
+  /*   @Get() @HttpCode(200)
+    find(@Query('username', CustomValidationPipe)username:string): UserEntity[] {
+        return this.users;
+    } */
     /*****************/
     /*  @Get(':username')
      @HttpCode(200)
      findOne(@Param('username') username: string): string {
          return `User ${username} details`;
      } */
+    /*  @Get(':id')
+     @HttpCode(200)
+     findOne(
+       @Param('id', 
+         new ParseIntPipe({
+             errorHttpStatusCode: HttpStatus.FORBIDDEN,
+             exceptionFactory: () =>
+                 new BadRequestException('ID must be a valid number'),
+         
+           }),
+         )
+          id: string): UserEntity {
+         const user = this.users.find((user) => user.id === id);
+ 
+         if (!user) {
+             throw new NotFoundException('User not found');
+         }
+ 
+         return user;
+     }
+  */
     @Get(':id')
     @HttpCode(200)
-    findOne(@Param('id') id: string): UserEntity {
+    findOne(
+        /*     @Param('id', new ParseUUIDPipe()) id: string): UserEntity { */
+        @Param('id', new ParseUUIDPipe({
+            exceptionFactory: () =>
+                new BadRequestException('Invalid UUID format'),
+        })) id: string): UserEntity {
         const user = this.users.find((user) => user.id === id);
-
         if (!user) {
             throw new NotFoundException('User not found');
         }
-
         return user;
     }
-
     /*****************/
     /*  @Post()
      @HttpCode(201)
@@ -62,9 +95,34 @@ import {
          // console.log('Request:', request.params);
          return "User Created successfully!"
      } */
+    // @Post()
+    // @HttpCode(201)
+    // // Create(@Body() CreateUserDto: CreateUserDto): UserEntity {
+    // Create(@Body(ValidationPipe) CreateUserDto: CreateUserDto): UserEntity {//validation pipes make nest see the rules in dtos
+    //     const newUser: UserEntity = {
+    //         ...CreateUserDto,
+    //         id: uuidv4()
+    //     };
+    //     this.users.push(newUser);
+    //     return newUser;
+    // }
+    // @UsePipes(ValidationPipe)//validation pipe on route level
+    // @Post()
+    // @HttpCode(201)
+    // // Create(@Body() CreateUserDto: CreateUserDto): UserEntity {
+    // Create(@Body() CreateUserDto: CreateUserDto): UserEntity {//validation pipes make nest see the rules in dtos
+    //     const newUser: UserEntity = {
+    //         ...CreateUserDto,
+    //         id: uuidv4()
+    //     };
+    //     this.users.push(newUser);
+    //     return newUser;
+    // }
+    //global
     @Post()
     @HttpCode(201)
-    Create(@Body() CreateUserDto: CreateUserDto): UserEntity {
+    // Create(@Body() CreateUserDto: CreateUserDto): UserEntity {
+    Create(@Body() CreateUserDto: CreateUserDto): UserEntity {//validation pipes make nest see the rules in dtos
         const newUser: UserEntity = {
             ...CreateUserDto,
             id: uuidv4()
@@ -72,6 +130,18 @@ import {
         this.users.push(newUser);
         return newUser;
     }
+    //group test
+    /*  @Post()
+     @HttpCode(201)
+     // Create(@Body() CreateUserDto: CreateUserDto): UserEntity {
+     Create(@Body(new ValidationPipe({groups:['create']})) CreateUserDto: CreateUserDto): UserEntity {//validation pipes make nest see the rules in dtos
+         const newUser: UserEntity = {
+             ...CreateUserDto,
+             id: uuidv4()
+         };
+         this.users.push(newUser);
+         return newUser;
+     } */
     /*****************/
     /*  @Patch(':username')
      update(@Param('username') username: string, @Body() input: any): string {
@@ -81,9 +151,14 @@ import {
     @Patch(':id')
     @HttpCode(200)
     update(
-        @Param('id') id: string,
+        @Param('id', new ParseUUIDPipe({
+            exceptionFactory: () =>
+                new BadRequestException('Invalid UUID format'),
+        })) id: string,
         // @Param('id', ParseIntPipe) id: number,
-        @Body() updateUserDto: UpdateUserDto,
+        /*@Body(ValidationPipe) updateUserDto: UpdateUserDto, */
+        // @Body(new ValidationPipe({groups:['update']}))updateUserDto: UpdateUserDto,//for group test
+        @Body() updateUserDto: UpdateUserDto,//with global pipe way
     ): UserEntity {
         const userIndex = this.users.findIndex(user => user.id === id);
 
@@ -101,7 +176,10 @@ import {
     /*****************/
     @Delete(':id')
     @HttpCode(HttpStatus.NO_CONTENT)
-    remove(@Param('id') id: string): void {
+    remove(@Param('id', new ParseUUIDPipe({
+        exceptionFactory: () =>
+            new BadRequestException('Invalid UUID format'),
+    })) id: string): void {
         const userIndex = this.users.findIndex((user) => user.id === id);
         if (userIndex === -1) {
             throw new NotFoundException('User not found');
@@ -123,3 +201,11 @@ import {
     // ⚠️ Note: When you use @Res(), Nest stops automatic response handling — you must manage status codes and responses manually.
     /*****************/
 }
+/*********** */
+//   @Get()
+//   findAll(@Res({ passthrough: true }) res: Response) {
+//     res.cookie('token', 'abc123'); // 👈 You can still set cookies/headers
+//     return ['Persian', 'Siamese', 'Maine Coon']; // 👈 Nest will still serialize this
+//   }
+//   •	You can set headers/cookies manually.
+// •	You still get automatic response handling (status codes, JSON serialization).
