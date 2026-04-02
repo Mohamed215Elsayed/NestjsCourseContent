@@ -1,12 +1,13 @@
 import {
     BadRequestException,
-    Body, Controller, Delete, ForbiddenException, ParseUUIDPipe, Get, HttpCode, HttpStatus, NotFoundException, Param, ParseIntPipe, Patch, Post, Req, Res, ValidationPipe, UsePipes, Query
+    Body, Controller, Delete,  ParseUUIDPipe, Get, HttpCode, HttpStatus,  Param, Patch, Post, 
+    // , Res, ValidationPipe, UsePipes, Query, ParseIntPipe,ForbiddenException, ,NotFoundException,
 }
     from "@nestjs/common";
-import type {
-    Request, Response
-}
-    from 'express';
+// import type {
+//     Request, Response
+// }
+//     from 'express';
 import {
     CreateUserDto
 }
@@ -23,26 +24,27 @@ import {
     v4 as uuidv4
 }
     from 'uuid';
-import { CustomValidationPipe } from "./pipes/validation.pipe";
+// import { CustomValidationPipe } from "./pipes/validation.pipe";
+import { UsersService } from "./users.service";
 
 // @UsePipes(ValidationPipe)//validation pipe on controller level
 @Controller("api/v1/users") export class UsersController {
     /*****************/
-    private readonly users: UserEntity[] = [];
+    // private readonly users: UserEntity[] = [];
     /*****************/
     /*  @Get() @HttpCode(200) */
     /*  find(): string[] {
          return ["ali", "mo", "rana", "wafaa"]
      } */
-    @Get() @HttpCode(200)
+    /* @Get() @HttpCode(200)
     find(): UserEntity[] {
         return this.users;
-    } 
+    }  */
     //ex on custom validation pipe
-  /*   @Get() @HttpCode(200)
-    find(@Query('username', CustomValidationPipe)username:string): UserEntity[] {
-        return this.users;
-    } */
+    /*   @Get() @HttpCode(200)
+      find(@Query('username', CustomValidationPipe)username:string): UserEntity[] {
+          return this.users;
+      } */
     /*****************/
     /*  @Get(':username')
      @HttpCode(200)
@@ -70,20 +72,20 @@ import { CustomValidationPipe } from "./pipes/validation.pipe";
          return user;
      }
   */
-    @Get(':id')
-    @HttpCode(200)
-    findOne(
-        /*     @Param('id', new ParseUUIDPipe()) id: string): UserEntity { */
-        @Param('id', new ParseUUIDPipe({
-            exceptionFactory: () =>
-                new BadRequestException('Invalid UUID format'),
-        })) id: string): UserEntity {
-        const user = this.users.find((user) => user.id === id);
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
-        return user;
-    }
+    /*  @Get(':id')
+     @HttpCode(200)
+     findOne( */
+    /*     @Param('id', new ParseUUIDPipe()) id: string): UserEntity { */
+    /*    @Param('id', new ParseUUIDPipe({
+           exceptionFactory: () =>
+               new BadRequestException('Invalid UUID format'),
+       })) id: string): UserEntity {
+       const user = this.users.find((user) => user.id === id);
+       if (!user) {
+           throw new NotFoundException('User not found');
+       }
+       return user;
+   } */
     /*****************/
     /*  @Post()
      @HttpCode(201)
@@ -119,17 +121,17 @@ import { CustomValidationPipe } from "./pipes/validation.pipe";
     //     return newUser;
     // }
     //global
-    @Post()
-    @HttpCode(201)
-    // Create(@Body() CreateUserDto: CreateUserDto): UserEntity {
-    Create(@Body() CreateUserDto: CreateUserDto): UserEntity {//validation pipes make nest see the rules in dtos
-        const newUser: UserEntity = {
-            ...CreateUserDto,
-            id: uuidv4()
-        };
-        this.users.push(newUser);
-        return newUser;
-    }
+    /*   @Post()
+      @HttpCode(201)
+      // Create(@Body() CreateUserDto: CreateUserDto): UserEntity {
+      Create(@Body() CreateUserDto: CreateUserDto): UserEntity {//validation pipes make nest see the rules in dtos
+          const newUser: UserEntity = {
+              ...CreateUserDto,
+              id: uuidv4()
+          };
+          this.users.push(newUser);
+          return newUser;
+      } */
     //group test
     /*  @Post()
      @HttpCode(201)
@@ -148,44 +150,44 @@ import { CustomValidationPipe } from "./pipes/validation.pipe";
          return `User ${username}-${input}  updated successfully`;
      } */
     // UpdateUserDto
-    @Patch(':id')
-    @HttpCode(200)
-    update(
-        @Param('id', new ParseUUIDPipe({
-            exceptionFactory: () =>
-                new BadRequestException('Invalid UUID format'),
-        })) id: string,
-        // @Param('id', ParseIntPipe) id: number,
-        /*@Body(ValidationPipe) updateUserDto: UpdateUserDto, */
-        // @Body(new ValidationPipe({groups:['update']}))updateUserDto: UpdateUserDto,//for group test
-        @Body() updateUserDto: UpdateUserDto,//with global pipe way
-    ): UserEntity {
-        const userIndex = this.users.findIndex(user => user.id === id);
+    /*  @Patch(':id')
+     @HttpCode(200)
+     update(
+         @Param('id', new ParseUUIDPipe({
+             exceptionFactory: () =>
+                 new BadRequestException('Invalid UUID format'),
+         })) id: string, */
+    // @Param('id', ParseIntPipe) id: number,
+    /*@Body(ValidationPipe) updateUserDto: UpdateUserDto, */
+    // @Body(new ValidationPipe({groups:['update']}))updateUserDto: UpdateUserDto,//for group test
+    /*   @Body() updateUserDto: UpdateUserDto,//with global pipe way
+  ): UserEntity {
+      const userIndex = this.users.findIndex(user => user.id === id);
 
-        if (userIndex === -1) {
-            throw new NotFoundException('User not found');
-        }
+      if (userIndex === -1) {
+          throw new NotFoundException('User not found');
+      }
 
-        this.users[userIndex] = {
-            ...this.users[userIndex],
-            ...updateUserDto,
-        };
+      this.users[userIndex] = {
+          ...this.users[userIndex],
+          ...updateUserDto,
+      };
 
-        return this.users[userIndex];
-    }
+      return this.users[userIndex];
+  } */
     /*****************/
-    @Delete(':id')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    remove(@Param('id', new ParseUUIDPipe({
-        exceptionFactory: () =>
-            new BadRequestException('Invalid UUID format'),
-    })) id: string): void {
-        const userIndex = this.users.findIndex((user) => user.id === id);
-        if (userIndex === -1) {
-            throw new NotFoundException('User not found');
-        }
-        this.users.splice(userIndex, 1);
-    };
+    /*  @Delete(':id')
+     @HttpCode(HttpStatus.NO_CONTENT)
+     remove(@Param('id', new ParseUUIDPipe({
+         exceptionFactory: () =>
+             new BadRequestException('Invalid UUID format'),
+     })) id: string): void {
+         const userIndex = this.users.findIndex((user) => user.id === id);
+         if (userIndex === -1) {
+             throw new NotFoundException('User not found');
+         }
+         this.users.splice(userIndex, 1);
+     }; */
     /*    @Delete(':username')// @HttpCode(204)
        @HttpCode(HttpStatus.NO_CONTENT) remove(@Param('username') username: string): string {
            return `User $ {
@@ -200,12 +202,57 @@ import { CustomValidationPipe } from "./pipes/validation.pipe";
     //      }
     // ⚠️ Note: When you use @Res(), Nest stops automatic response handling — you must manage status codes and responses manually.
     /*****************/
+    /*********** */
+    //   @Get()
+    //   findAll(@Res({ passthrough: true }) res: Response) {
+    //     res.cookie('token', 'abc123'); // 👈 You can still set cookies/headers
+    //     return ['Persian', 'Siamese', 'Maine Coon']; // 👈 Nest will still serialize this
+    //   }
+    //   •	You can set headers/cookies manually.
+    // •	You still get automatic response handling (status codes, JSON serialization).
+    /***********section-3 */
+    constructor(private readonly usersService: UsersService) { }
+    @Get() @HttpCode(200)
+    find(): UserEntity[] {
+        return this.usersService.findUsers();
+    }
+    /*########################*/
+    @Get(':id')
+    @HttpCode(200)
+    findOne(
+        @Param('id', new ParseUUIDPipe({
+            exceptionFactory: () =>
+                new BadRequestException('Invalid UUID format'),
+        })) id: string): UserEntity {
+        return this.usersService.findUserById(id);
+    }
+    /*########################*/
+    @Post()
+    @HttpCode(201)
+    Create(@Body() createUserDto: CreateUserDto): UserEntity {
+        return this.usersService.createUser(createUserDto);
+    }
+    /*########################*/
+    @Patch(':id')
+    @HttpCode(200)
+    update(
+        @Param('id', new ParseUUIDPipe({
+            exceptionFactory: () =>
+                new BadRequestException('Invalid UUID format'),
+        })) id: string,
+
+        @Body() updateUserDto: UpdateUserDto,
+    ): UserEntity {
+        return this.usersService.updateUser(id, updateUserDto);
+    }
+    /*########################*/
+    @Delete(':id')
+    @HttpCode(HttpStatus.NO_CONTENT)
+    remove(@Param('id', new ParseUUIDPipe({
+        exceptionFactory: () =>
+            new BadRequestException('Invalid UUID format'),
+    })) id: string): void {
+        return this.usersService.deleteUser(id);
+    };
+    /*########################*/
 }
-/*********** */
-//   @Get()
-//   findAll(@Res({ passthrough: true }) res: Response) {
-//     res.cookie('token', 'abc123'); // 👈 You can still set cookies/headers
-//     return ['Persian', 'Siamese', 'Maine Coon']; // 👈 Nest will still serialize this
-//   }
-//   •	You can set headers/cookies manually.
-// •	You still get automatic response handling (status codes, JSON serialization).

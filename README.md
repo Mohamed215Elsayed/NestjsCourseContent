@@ -43,6 +43,224 @@
             <!-- ###################################### -->
             git tag section-2
             <!-- ###################################### -->
-- Section 3 
+            - Section 3 
+            <!-- ###################################### -->
+                  Providers
+                  Services
+                  Dependency injection(DI),(DIC),(IOC)
+                  Scopes
+                  Custom providers
+                  Optional providers
+                  Property-based injection
+                  Provider registration
+                  Manual instantiation
+          <!-- ###################################### -->
+🧠 أولاً: المشكلة الأساسية (ليه DI أصلاً؟)
+
+تخيل عندك كود زي ده:
+
+class UserService {
+  private repo = new UserRepository();
+
+  findAll() {
+    return this.repo.findAll();
+  }
+}
+❌ المشكلة:
+UserService مربوط (tightly coupled) بـ UserRepository
+صعب تعمل:
+Testing
+Replace implementation
+Scale architecture
+🔄 الحل: Inversion of Control (IoC)
+
+بدل ما الكلاس هو اللي ينشئ dependencies بنفسه
+نخلي حد تاني (Container) هو اللي يدير ده
+
+👉 يعني:
+
+"Don't call dependencies… let them be provided to you"
+
+💉 Dependency Injection (DI)
+
+هو طريقة تطبيق IoC
+
+بدل:
+
+private repo = new UserRepository();
+
+نكتب:
+
+constructor(private repo: UserRepository) {}
+
+🚀 كده Nest هو اللي:
+
+ينشئ UserRepository
+ويحطه في UserService
+🏗️ NestJS DI Architecture (تحت الهود)
+
+Nest عنده حاجة اسمها:
+
+IoC Container (Dependency Injection Container)
+
+وده مسؤول عن:
+
+إنشاء instances
+تخزينها
+حقنها في الأماكن المطلوبة
+📦 Providers (أهم مفهوم)
+
+أي حاجة Nest يقدر يعمل لها Inject اسمها Provider
+
+مثال:
+
+@Injectable()
+export class UserService {}
+🔑 إزاي Nest يعرف يعمل Inject؟
+
+عن طريق:
+
+1. @Injectable()
+
+بتقول لـ Nest:
+
+الكلاس ده ممكن يتحقن
+
+2. Reflection (metadata)
+
+Nest بيقرأ constructor:
+
+constructor(private repo: UserRepository)
+
+ويفهم:
+
+محتاج instance من UserRepository
+
+🧩 Modules = Scope للـ DI
+
+كل حاجة في Nest شغالة جوه Module:
+
+@Module({
+  providers: [UserService, UserRepository],
+})
+export class UserModule {}
+
+📌 مهم:
+
+أي provider لازم يكون registered في module
+🔁 Dependency Graph (شجرة الاعتمادات)
+
+Nest بيبني Graph زي:
+
+UserController
+   ↓
+UserService
+   ↓
+UserRepository
+
+وبعدين:
+
+ينشئهم بالترتيب
+ويحفظهم في container
+🧪 Lifecycle (إزاي instance بيتعمل؟)
+Default Scope = Singleton
+@Injectable()
+export class UserService {}
+
+✔️ بيتعمل instance واحدة بس طول عمر التطبيق
+
+Scopes تانية:
+1. Request Scope
+@Injectable({ scope: Scope.REQUEST })
+instance جديدة لكل request
+2. Transient
+@Injectable({ scope: Scope.TRANSIENT })
+instance جديدة كل مرة يتم inject فيها
+🔥 أنواع الـ Injection
+1. Constructor Injection (الأشهر)
+constructor(private userService: UserService) {}
+2. Custom Injection Token
+
+مفيد لما:
+
+مش عايز تربط بكلاس معين
+عايز abstraction
+{
+  provide: 'USER_REPO',
+  useClass: UserRepository,
+}
+
+Inject:
+
+constructor(@Inject('USER_REPO') private repo: any) {}
+3. useValue
+{
+  provide: 'API_KEY',
+  useValue: '123456',
+}
+4. useFactory (Advanced)
+{
+  provide: 'DB_CONNECTION',
+  useFactory: () => {
+    return createConnection();
+  },
+}
+5. useExisting
+{
+  provide: 'ALIAS_SERVICE',
+  useExisting: UserService,
+}
+🔄 Circular Dependency (مشكلة شهيرة)
+UserService → AuthService
+AuthService → UserService
+
+💥 يحصل crash
+
+الحل:
+constructor(
+  @Inject(forwardRef(() => AuthService))
+  private authService: AuthService
+) {}
+🧪 Testing + DI (قوة حقيقية)
+const module = await Test.createTestingModule({
+  providers: [
+    UserService,
+    {
+      provide: UserRepository,
+      useValue: mockRepo,
+    },
+  ],
+}).compile();
+
+🚀 تقدر تستبدل أي dependency بسهولة
+
+🧠 Mental Model مهم جداً
+
+فكر في Nest كأنه:
+
+Runtime System بيبني Objects Graph ويديرها عنك
+
+مش مجرد Framework APIs.
+
+⚠️ أخطاء شائعة
+❌ 1. نسيان إضافة provider في module
+providers: []
+❌ 2. استخدام class بدون @Injectable()
+❌ 3. خلط بين interface و injection
+constructor(private repo: IUserRepo) {} // ❌
+
+✔️ لازم Token:
+
+constructor(@Inject('IUserRepo') private repo: IUserRepo) {}
+🔥 Summary (ركز فيها)
+IoC = نقل التحكم للـ container
+DI = طريقة حقن dependencies
+Providers = أي حاجة Nest يقدر injectها
+Module = scope للـ DI
+Default = Singleton
+تقدر تتحكم في injection بـ tokens و factories
+    <!-- ###################################### -->
+            git tag section-3
+    <!-- ###################################### -->
 - Section 4
 git push origin --tags
