@@ -56,12 +56,10 @@
                   Manual instantiation
           <!-- ###################################### -->
 🧠 أولاً: المشكلة الأساسية (ليه DI أصلاً؟)
-
 تخيل عندك كود زي ده:
 
 class UserService {
   private repo = new UserRepository();
-
   findAll() {
     return this.repo.findAll();
   }
@@ -72,46 +70,32 @@ UserService مربوط (tightly coupled) بـ UserRepository
 Testing
 Replace implementation
 Scale architecture
+
 🔄 الحل: Inversion of Control (IoC)
 
 بدل ما الكلاس هو اللي ينشئ dependencies بنفسه
 نخلي حد تاني (Container) هو اللي يدير ده
 
-👉 يعني:
-
-"Don't call dependencies… let them be provided to you"
+👉 يعني: "Don't call dependencies… let them be provided to you"
 
 💉 Dependency Injection (DI)
 
 هو طريقة تطبيق IoC
+بدل: private repo = new UserRepository();
 
-بدل:
+نكتب: constructor(private repo: UserRepository) {}
 
-private repo = new UserRepository();
-
-نكتب:
-
-constructor(private repo: UserRepository) {}
-
-🚀 كده Nest هو اللي:
-
-ينشئ UserRepository
-ويحطه في UserService
+🚀 كده Nest هو اللي: ينشئ UserRepository ويحطه في UserService
 🏗️ NestJS DI Architecture (تحت الهود)
 
-Nest عنده حاجة اسمها:
-
-IoC Container (Dependency Injection Container)
-
+Nest عنده حاجة اسمها: IoC Container (Dependency Injection Container)
 وده مسؤول عن:
-
 إنشاء instances
 تخزينها
 حقنها في الأماكن المطلوبة
 📦 Providers (أهم مفهوم)
 
 أي حاجة Nest يقدر يعمل لها Inject اسمها Provider
-
 مثال:
 
 @Injectable()
@@ -119,23 +103,53 @@ export class UserService {}
 🔑 إزاي Nest يعرف يعمل Inject؟
 
 عن طريق:
-
 1. @Injectable()
-
 بتقول لـ Nest:
-
 الكلاس ده ممكن يتحقن
 
 2. Reflection (metadata)
-
 Nest بيقرأ constructor:
-
 constructor(private repo: UserRepository)
 
 ويفهم:
-
 محتاج instance من UserRepository
 
+    <!-- ###################################### -->
+            git tag section-3
+    <!-- ###################################### -->
+- Section-4 
+        --Providers in Deep
+        --constructor-based injection,ex  Constructor(){}
+        --providers: ex [UsersService],This called "The Standard Provider"
+        --Provider registration
+        --Custom providers#
+  What happens when your requirements go beyond those offered by Standard providers? Here are a few examples:
+
+  You want to create a custom instance instead of having Nest instantiate (or return a cached instance of) a class
+  You want to re-use an existing class in a second dependency
+  You want to override a class with a mock version for testing
+  Value providers: useValue
+ #--Custom providers#
+          ---Value providers: useValue
+          ---Non-class-based provider tokens
+          ---Class providers: useClass
+          ---Factory providers: useFactory
+          ---Alias providers: useExisting
+          ---Non-service based providers
+          ---Export custom provider
+<!--##########################################-->
+          ----async providers
+          ----Injection scopes 
+                    Provider scope
+                    Usage
+                    Controller scope
+                    Scope hierarchy
+                    Request provider
+                    Inquirer provider
+                    Performance
+                    Durable providers
+  
+<!-- ###################################### -->
 🧩 Modules = Scope للـ DI
 
 كل حاجة في Nest شغالة جوه Module:
@@ -146,12 +160,10 @@ constructor(private repo: UserRepository)
 export class UserModule {}
 
 📌 مهم:
-
 أي provider لازم يكون registered في module
 🔁 Dependency Graph (شجرة الاعتمادات)
 
 Nest بيبني Graph زي:
-
 UserController
    ↓
 UserService
@@ -259,8 +271,7 @@ Providers = أي حاجة Nest يقدر injectها
 Module = scope للـ DI
 Default = Singleton
 تقدر تتحكم في injection بـ tokens و factories
-    <!-- ###################################### -->
-            git tag section-3
-    <!-- ###################################### -->
-- Section 4
-git push origin --tags
+<!-- ###################################### -->
+         git tag section-4
+         git push origin --tags
+ <!-- ####################################-->

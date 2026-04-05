@@ -212,6 +212,8 @@ import { UsersService } from "./users.service";
     // •	You still get automatic response handling (status codes, JSON serialization).
     /***********section-3 */
     constructor(private readonly usersService: UsersService) { }
+    //The technique we've used so far is called constructor-based injection, 
+    //where the token is used to request an instance of a class by the same name.
     @Get() @HttpCode(200)
     find(): UserEntity[] {
         return this.usersService.findUsers();
