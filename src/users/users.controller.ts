@@ -1,6 +1,6 @@
 import {
     BadRequestException,
-    Body, Controller, Delete,  ParseUUIDPipe, Get, HttpCode, HttpStatus,  Param, Patch, Post, 
+    Body, Controller, Delete, ParseUUIDPipe, Get, HttpCode, HttpStatus, Param, Patch, Post, ClassSerializerInterceptor, UseInterceptors,
     // , Res, ValidationPipe, UsePipes, Query, ParseIntPipe,ForbiddenException, ,NotFoundException,
 }
     from "@nestjs/common";
@@ -26,9 +26,18 @@ import {
     from 'uuid';
 // import { CustomValidationPipe } from "./pipes/validation.pipe";
 import { UsersService } from "./users.service";
+import { UserResponseDto } from "./dtos/users-response.dto";
+import { CacheInterceptor } from "./Interceptors/CacheInterceptor.interceptor";
+import { resolve } from "path";
+// import { MyInterceptor } from "./Interceptors/MyInterceptor.interceptor";
+// import { TransformInterceptor } from "./Interceptors/Transform.interceptor";
+// import { NullInterceptor } from "./Interceptors/NullInterceptor.interceptor";
+// import { ErrorInterceptor } from "./Interceptors/ErrorInterceptor.interceptor";
 
+// @UseInterceptors(ClassSerializerInterceptor)
 // @UsePipes(ValidationPipe)//validation pipe on controller level
-@Controller("api/v1/users") export class UsersController {
+@Controller("api/v1/users")
+export class UsersController {
     /*****************/
     // private readonly users: UserEntity[] = [];
     /*****************/
@@ -214,7 +223,23 @@ import { UsersService } from "./users.service";
     constructor(private readonly usersService: UsersService) { }
     //The technique we've used so far is called constructor-based injection, 
     //where the token is used to request an instance of a class by the same name.
-    @Get() @HttpCode(200)
+    // ################
+    /*  @Get() 
+     @HttpCode(200)
+     async find(): Promise<UserEntity[]>  {
+         await new Promise( (resolve)=> setTimeout(resolve,5000));
+         return this.usersService.findUsers();
+     } */
+    //here i apply timeout interceptor check
+    /*
+    {
+    "message": "Request timeout",
+    "error": "Request Timeout",
+    "statusCode": 408
+}*/
+    // ################
+    @Get()
+    @HttpCode(200)
     find(): UserEntity[] {
         return this.usersService.findUsers();
     }
@@ -225,13 +250,18 @@ import { UsersService } from "./users.service";
         @Param('id', new ParseUUIDPipe({
             exceptionFactory: () =>
                 new BadRequestException('Invalid UUID format'),
-        })) id: string): UserEntity {
+        })) id: string): UserResponseDto {
         return this.usersService.findUserById(id);
     }
     /*########################*/
+    // @UseInterceptors(CacheInterceptor)
+    // @UseInterceptors(ErrorInterceptor)
+    // @UseInterceptors(NullInterceptor)
+    // @UseInterceptors(TransformInterceptor)
+    //@UseInterceptors(MyInterceptor)
     @Post()
     @HttpCode(201)
-    Create(@Body() createUserDto: CreateUserDto): UserEntity {
+    Create(@Body() createUserDto: CreateUserDto): UserResponseDto {
         return this.usersService.createUser(createUserDto);
     }
     /*########################*/

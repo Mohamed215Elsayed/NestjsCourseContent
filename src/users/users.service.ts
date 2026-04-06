@@ -3,7 +3,9 @@ import { UserEntity } from './user.entity';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { v4 as uuidv4 } from 'uuid';
-import { APP_NAME, USER_HABITS ,USER_HABITSCOMPLEX,AliasedLoggerService} from './user.constants';
+import { UserResponseDto } from './dtos/users-response.dto';
+import { plainToInstance } from 'class-transformer';
+// import { APP_NAME, USER_HABITS ,USER_HABITSCOMPLEX,AliasedLoggerService} from './user.constants';
 
 // @Injectable({ scope: Scope.REQUEST})//ين كل المستخدمينRequest → نسخة لكل Request
 // @Injectable({ scope: Scope.TRANSIENT})//Transient → نسخة لكل استخدام
@@ -11,17 +13,17 @@ import { APP_NAME, USER_HABITS ,USER_HABITSCOMPLEX,AliasedLoggerService} from '.
 @Injectable()
 export class UsersService {
     /*########################*/
-    constructor(@Inject(APP_NAME) private readonly appName: string,
-     @Inject(USER_HABITS) private readonly userHabits: string[],
-     @Inject(USER_HABITSCOMPLEX) private readonly userHabitsComplex:string[],
+    // constructor(@Inject(APP_NAME) private readonly appName: string,
+    //  @Inject(USER_HABITS) private readonly userHabits: string[],
+    //  @Inject(USER_HABITSCOMPLEX) private readonly userHabitsComplex:string[],
     //  @Inject(AliasedLoggerService)private readonly aliasedProvider:string,
-    ) {
-        console.log(this.appName);
-        console.log(this.userHabits);
-        console.log(this.userHabitsComplex);
-        // console.log(this.aliasedProvider)
-        console.log("app is initailized");
-    }
+    // ) {
+    // console.log(this.appName);
+    // console.log(this.userHabits);
+    // console.log(this.userHabitsComplex);
+    // console.log(this.aliasedProvider)
+    // console.log("app is initailized");
+    // }
     /*########################*/
     private readonly users: UserEntity[] = [];
     /*########################*/
@@ -29,21 +31,26 @@ export class UsersService {
         return this.users;
     }
     /*########################*/
-    findUserById(id: string): UserEntity {
+    findUserById(id: string): UserResponseDto{
         const user = this.users.find((user) => user.id === id);
         if (!user) {
             throw new NotFoundException('User not found');
         }
-        return user;
+        return plainToInstance(UserResponseDto, user, {
+            excludeExtraneousValues: true,
+        });
     }
     /*########################*/
-    createUser(@Body() createUserDto: CreateUserDto): UserEntity {
+    createUser(@Body() createUserDto: CreateUserDto): UserResponseDto {
         const newUser: UserEntity = {
             ...createUserDto,
             id: uuidv4()
         };
         this.users.push(newUser);
-        return newUser;
+        // return  new UserResponseDto(newUser);
+        return plainToInstance(UserResponseDto, newUser, {
+            excludeExtraneousValues: true,
+        });
     }
     /*########################*/
     updateUser(id: string, @Body() updateUserDto: UpdateUserDto): UserEntity {
