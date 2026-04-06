@@ -5,6 +5,7 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { UserResponseDto } from './dtos/users-response.dto';
 import { plainToInstance } from 'class-transformer';
+import { CustomHttpException } from '../common/filters/exceptions/custom-http.exceptions';
 // import { APP_NAME, USER_HABITS ,USER_HABITSCOMPLEX,AliasedLoggerService} from './user.constants';
 
 // @Injectable({ scope: Scope.REQUEST})//ين كل المستخدمينRequest → نسخة لكل Request
@@ -31,10 +32,16 @@ export class UsersService {
         return this.users;
     }
     /*########################*/
-    findUserById(id: string): UserResponseDto{
+    findUserById(id: string): UserResponseDto {
         const user = this.users.find((user) => user.id === id);
         if (!user) {
-            throw new NotFoundException('User not found');
+            throw new NotFoundException('User not found'
+                /* ,{
+                cause: new Error(),
+                description: 'Some error description',
+              } */
+            );
+            // throw new CustomHttpException();//for custom exception test
         }
         return plainToInstance(UserResponseDto, user, {
             excludeExtraneousValues: true,
