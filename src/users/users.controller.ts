@@ -1,38 +1,28 @@
 import {
     BadRequestException,
-    Body, Controller, Delete, ParseUUIDPipe, Get, HttpCode, HttpStatus, Param, Patch, Post, ClassSerializerInterceptor, UseInterceptors,
+    Body, Controller, Delete, ParseUUIDPipe, Get, HttpCode, HttpStatus, Param, Patch, Post, 
+    // ClassSerializerInterceptor, UseInterceptors, UseGuards, SetMetadata,
     // , Res, ValidationPipe, UsePipes, Query, ParseIntPipe,ForbiddenException, ,NotFoundException,
 }
     from "@nestjs/common";
-// import type {
-//     Request, Response
-// }
-//     from 'express';
-import {
-    CreateUserDto
-}
-    from "./dtos/create-user.dto";
-import {
-    UpdateUserDto
-}
-    from "./dtos/update-user.dto";
-import {
-    UserEntity
-}
-    from "./user.entity";
-import {
-    v4 as uuidv4
-}
-    from 'uuid';
+// import type {Request, Response} from 'express';
+import {CreateUserDto} from "./dtos/create-user.dto";
+import {UpdateUserDto} from "./dtos/update-user.dto";
+import {UserEntity} from "./user.entity";
+import { v4 as uuidv4} from 'uuid';
 // import { CustomValidationPipe } from "./pipes/validation.pipe";
 import { UsersService } from "./users.service";
 import { UserResponseDto } from "./dtos/users-response.dto";
-import { CacheInterceptor } from "./Interceptors/CacheInterceptor.interceptor";
-import { resolve } from "path";
+// import { CacheInterceptor } from "./Interceptors/CacheInterceptor.interceptor";
+// import { resolve } from "path";
+
+// import { AuthGuard } from "../common/guards/auth/auth.guard";
 // import { MyInterceptor } from "./Interceptors/MyInterceptor.interceptor";
 // import { TransformInterceptor } from "./Interceptors/Transform.interceptor";
 // import { NullInterceptor } from "./Interceptors/NullInterceptor.interceptor";
 // import { ErrorInterceptor } from "./Interceptors/ErrorInterceptor.interceptor";
+import { Public } from "../common/decorators/public.decorator";
+
 
 // @UseInterceptors(ClassSerializerInterceptor)
 // @UsePipes(ValidationPipe)//validation pipe on controller level
@@ -239,12 +229,15 @@ export class UsersController {
 }*/
     // ################
     @Get()
+    // @SetMetadata("IS_PUBLIC",true)
+    @Public()
     @HttpCode(200)
     find(): UserEntity[] {
         return this.usersService.findUsers();
     }
     /*########################*/
     @Get(':id')
+    @Public()
     @HttpCode(200)
     findOne(
         @Param('id', new ParseUUIDPipe({
@@ -260,12 +253,14 @@ export class UsersController {
     // @UseInterceptors(TransformInterceptor)
     //@UseInterceptors(MyInterceptor)
     @Post()
+    // @UseGuards(AuthGuard)
     @HttpCode(201)
     Create(@Body() createUserDto: CreateUserDto): UserResponseDto {
         return this.usersService.createUser(createUserDto);
     }
     /*########################*/
     @Patch(':id')
+    @Public()
     @HttpCode(200)
     update(
         @Param('id', new ParseUUIDPipe({
@@ -279,6 +274,7 @@ export class UsersController {
     }
     /*########################*/
     @Delete(':id')
+    @Public()
     @HttpCode(HttpStatus.NO_CONTENT)
     remove(@Param('id', new ParseUUIDPipe({
         exceptionFactory: () =>

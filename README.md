@@ -1450,6 +1450,465 @@ BaseExceptionFilter → 🧠 Smart extension (you enhance default behavior)
 section-7 
 guards & middlewares
 <!-- ############################################  -->
+Guards
+Authorization guard
+Execution context
+Role-based authentication
+Binding guards
+Setting roles per handler
+Putting it all together
+<!-- ############################################  -->
+🧠 شرح Guards بالعربي
+✅ يعني إيه Guard؟
+
+الـ Guard هو كلاس في NestJS وظيفته:
+🎯 يحدد هل الطلب (request) مسموح له يكمل للـ route handler ولا لأ
+
+يعني ببساطة:
+لو الشرط اتحقق → الطلب يكمل
+لو الشرط ما اتحققش → الطلب يتمنع (reject)
+<!-- ################################## -->
+🔐 بيُستخدم في إيه؟
+غالبًا في:
+######## Use cases for Guards?
+Authentication (هل المستخدم مسجل دخول؟)
+Authorization (هل عنده صلاحية؟)
+Roles (admin / user)
+Permissions (ACL)
+RateLimiting
+other security-related feilds
+<!-- ############################################  -->
+⚙️ بيتكتب إزاي؟
+@Injectable()
+export class AuthGuard implements CanActivate {
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest();
+
+    return !!request.user; // لو فيه user → مسموح
+  }
+}
+<!-- ############################################  -->
+🔥 الفرق بين Guard و Middleware
+
+Middleware:
+شغال قبل أي حاجة
+❌ ما يعرفش أي route هيشتغل
+بيستخدم للحاجات العامة زي:
+parsing
+logging
+token extraction
+
+Guard:
+✅ بيشتغل بعد middleware
+✅ عارف أنهي route هيتنفذ
+يقدر يقرأ:
+metadata (زي roles)
+decorators
+👉 وده اللي يخليه مناسب جدًا للـ authorization
+<!-- ############################################  -->
+🧠 ليه Guards أقوى؟
+
+لأنه عنده access لـ: ExecutionContext
+وده بيديله:
+
+handler (الفنكشن اللي هتتنفذ)
+controller
+نوع التطبيق (HTTP / WS / RPC)
+<!-- ############################################  -->
+⏱ ترتيب التنفيذ (مهم جدًا)
+Middleware
+   ↓
+Guards  ✅ (هنا القرار)
+   ↓
+Interceptors
+   ↓
+Pipes
+   ↓
+Controller (handler)
+<!-- ############################################  -->
+🎯 الفكرة الأساسية
+
+Guard = “Gatekeeper”
+بيقرر: "تعدي ولا لأ؟"
+<!-- ############################################  -->
+Guards in NestJS are classes that implement the CanActivate interface and are responsible for determining whether a request should proceed to the route handler.
+
+They are primarily used for authorization and authentication, such as validating user roles, permissions, or access control rules.
+
+Unlike middleware, guards have access to the ExecutionContext, which allows them to know exactly which route handler will be executed. This enables more precise and declarative control over request handling.
+
+Guards are executed after middleware and before interceptors and pipes, making them the ideal place to enforce access control logic.
+
+In short:
+
+Guards act as a gatekeeper that decides whether a request is allowed to proceed or not.
+<!-- ############################################  -->
+section-7 Part-2
+Middleware
+Dependency injection
+Applying middleware
+Route wildcards
+Middleware consumer
+Excluding routes
+Functional middleware
+Multiple middleware
+Global middleware
+<!-- ############################################  -->
+🔥 أولًا: يعني إيه Middleware؟
+Middleware هو كود بيتنفذ قبل ما يوصل الريكوست للـ Controller.
+
+تقدر تستخدمه في:
+Logging
+Authentication
+Validation
+تعديل الـ request/response
+<!-- ############################################  -->
+🧠 1. Class Middleware (الطريقة الأساسية)
+import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Request, Response, NextFunction } from 'express';
+
+@Injectable()
+export class LoggerMiddleware implements NestMiddleware {
+  use(req: Request, res: Response, next: NextFunction) {
+    console.log('Request...');
+    next(); // مهم جدًا
+  }
+}
+
+✔ لازم:
+
+@Injectable()
+implements NestMiddleware
+method اسمها use
+<!-- ############################################  -->
+⚙️ 2. Applying Middleware (تطبيقه)
+
+في الـ module:
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+
+@Module({})
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('users');
+  }
+}
+
+✔ هنا الميدلوير بيشتغل على /users
+<!-- ############################################  -->
+🎯 3. Route Wildcards
+consumer.apply(LoggerMiddleware).forRoutes('users/*');
+
+✔ ده يعني:
+
+/users
+/users/1
+/users/anything
+🚫 4. Excluding Routes
+consumer
+  .apply(LoggerMiddleware)
+  .exclude('users/login')
+  .forRoutes('users');
+
+✔ هيشتغل على كل users ماعدا /users/login
+
+🧩 5. Middleware Consumer
+
+هو الـ API اللي Nest بيديك بيه التحكم:
+
+consumer
+  .apply(Middleware1, Middleware2)
+  .exclude(...)
+  .forRoutes(...);
+
+✔ تقدر:
+
+تضيف أكتر من middleware
+تتحكم في routes
+تعمل exclude
+🔗 6. Multiple Middleware
+consumer.apply(LoggerMiddleware, AuthMiddleware).forRoutes('users');
+
+✔ الترتيب مهم:
+
+Logger → Auth → Controller
+⚡ 7. Functional Middleware
+
+بدل class:
+
+import { Request, Response, NextFunction } from 'express';
+
+export function logger(req: Request, res: Response, next: NextFunction) {
+  console.log('Functional Middleware');
+  next();
+}
+
+وتستخدمه:
+
+consumer.apply(logger).forRoutes('users');
+
+✔ أخف وأبسط لو مش محتاج DI
+
+💉 8. Dependency Injection في Middleware
+
+تقدر تستخدم services:
+
+@Injectable()
+export class AuthMiddleware implements NestMiddleware {
+  constructor(private authService: AuthService) {}
+
+  use(req: Request, res: Response, next: NextFunction) {
+    const isAuth = this.authService.validate(req);
+    if (!isAuth) {
+      throw new UnauthorizedException();
+    }
+    next();
+  }
+}
+
+✔ ده السبب اللي يخليك تستخدم class بدل function
+
+🌍 9. Global Middleware
+
+لو عايزه يشتغل على كل routes:
+
+consumer.apply(LoggerMiddleware).forRoutes('*');
+
+أو في main.ts (Express style):
+
+app.use(logger);
+⚠️ أهم ملاحظة (بتوقع ناس كتير فيها)
+
+لو نسيت next():
+
+use(req, res, next) {
+  console.log('Hi');
+  // ❌ نسيت next()
+}
+
+✔ النتيجة:
+
+الريكوست هيقف ومش هيوصل للـ controller
+💡 الخلاصة
+Middleware = قبل الـ controller
+فيه نوعين:
+Class (يدعم DI)
+Function (خفيف)
+بيتطبق باستخدام MiddlewareConsumer
+تقدر:
+تحدد routes
+تستخدم wildcard
+تستثني routes
+تركّب multiple middleware
+<!-- ###############################  -->
+🧠 الصورة الكبيرة (Big Picture)
+تخيل الـ request ماشي كده:
+
+Request → Middleware → Guards → Interceptors → Controller → Response
+
+✔ Middleware = أول محطة
+
+قبل أي logic في Nest
+شغال زي Express 1:1
+<!-- ############################################  -->
+🔥 ليه أصلًا نستخدم Middleware؟
+مش أي حاجة تتحط فيه 👇
+
+✅ Use Middleware لما:
+Logging (requests / performance)
+Parsing / modifying request
+Simple auth check (token exists فقط)
+❌ ما تستخدموش في:
+Authorization معقد → استخدم Guards
+Business logic → Controller/Service
+
+👉 دي نقطة interview مشهورة جدًا
+
+💡 Insight مهم:
+next() = زي "continue pipeline"
+لو ما استدعيتوش → request يموت
+<!-- ############################################  -->
+💉 Dependency Injection (قوة Nest)
+constructor(private authService: AuthService) {}
+امتى أحتاجه؟
+لو بتشيك JWT
+بتقرأ من DB
+بتستخدم service
+
+👉 ساعتها لا تستخدم functional middleware
+<!-- ############################################  -->
+🎯 التحكم في Method (advanced)
+forRoutes({ path: 'cats', method: RequestMethod.GET });
+
+✔ middleware يشتغل بس على GET
+<!-- ############################################  -->
+🧠 Route Wildcards (جزء ناس كتير بتتلخبط فيه)
+forRoutes({
+  path: 'abcd/*splat',
+  method: RequestMethod.ALL,
+});
+✔ Matches:
+abcd/1
+abcd/xyz
+abcd/anything
+❌ لا يشمل: abcd فقط
+
+🔥 الحل:
+path: 'abcd/{*splat}'
+✔ كده يشمل:
+abcd
+abcd/anything
+👉 دي subtle جدًا وبتفرق في production
+<!-- ############################################  -->
+consumer
+  .apply(LoggerMiddleware)
+  .exclude(
+    { path: 'cats', method: RequestMethod.GET },
+    'cats/{*splat}',
+  )
+  .forRoutes(CatsController);
+<!-- ############################################  -->
+🔗 Multiple Middleware (execution order)
+consumer.apply(cors(), helmet(), logger).forRoutes(CatsController);
+الترتيب مهم:
+cors → helmet → logger → controller
+<!-- ############################################  -->
+🌍 Global Middleware (نقطتين مهمين جدًا)
+الطريقة 1 (Express style)
+app.use(logger);
+❌ مشكلة:
+مفيش Dependency Injection
+<!-- ############################################  -->
+الطريقة 2 (Nest way)
+consumer.apply(LoggerMiddleware).forRoutes('*');
+✔ الأفضل:
+يدعم DI
+flexible
+<!-- ############################################  -->
+🧠 مقارنة سريعة (مهمة للانترفيو)
+<!-- ############################################  -->
+Feature	     ||| Middleware	  |||   Guard   ||| Interceptor
+<!-- ############################################  -->
+قبل route    |||	✅	        |||    ✅	   |||    ✅
+<!-- ############################################  -->
+بعد response |||	❌	        |||    ❌     ||| 	  ✅
+<!-- ############################################  -->
+DI support	 |||  ✅	        |||    ✅	   |||    ✅
+<!-- ############################################  -->
+use case	   |||  logging	    |||    auth	  |||   transform
+<!-- ############################################  -->
+💡 الخلاصة الذكية
+Middleware = low-level (Express layer)
+Guard = auth logic
+Interceptor = advanced pipeline
+<!-- ############################################  -->
+👉 التفكير الصح:
+
+"لو الموضوع متعلق بالـ request نفسه → Middleware
+لو متعلق بالصلاحيات → Guard"
+<!-- ############################################  -->
+نقطة خطيرة جدًا (body-parser)
+
+Nest بيعمل ده تلقائي:
+
+app.use(json());
+app.use(urlencoded());
+لو عايز تتحكم:
+NestFactory.create(AppModule, { bodyParser: false });
+
+👉 غير كده أي middleware منك على body مش هيشتغل صح
+<!-- ############################################  -->
+🔥 المشكلة أصلًا فين؟
+
+NestJS (مع Express) بيعمل تلقائيًا:
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+✔ ده معناه:
+
+الـ request body بيتقري ويتحول لـ JSON قبل ما يوصل لأي middleware بتاعك
+💥 ليه ده ممكن يبوّظ الدنيا؟
+السيناريو الخطير:
+
+لو أنت عايز تعمل middleware زي:
+
+🔐 Webhook verification (Stripe / Paymob)
+🔏 Signature validation
+📦 Raw body parsing
+
+هتحتاج الـ raw body (زي ما هو)
+
+لكن Nest:
+👉 بيحوّله لـ object
+👉 وبيضيع الشكل الأصلي
+
+❌ مثال المشكلة
+use(req: Request, res: Response, next: NextFunction) {
+  console.log(req.body); // ❌ already parsed
+  next();
+}
+
+👉 هنا خلاص فقدت البيانات الأصلية
+
+✅ الحل الصح
+
+تعطّل الـ body-parser الافتراضي:
+
+const app = await NestFactory.create(AppModule, {
+  bodyParser: false,
+});
+🛠 بعد كده تتحكم بنفسك
+import * as express from 'express';
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+🎯 أو تعمل raw body middleware
+app.use(
+  express.json({
+    verify: (req: any, res, buf) => {
+      req.rawBody = buf;
+    },
+  }),
+);
+💡 كده بقى عندك:
+req.body → parsed
+req.rawBody → original buffer
+
+👉 ده المطلوب في webhooks
+
+🧠 إمتى أحتاج الكلام ده؟
+استخدمه لو بتتعامل مع:
+Stripe webhooks
+Paymob / PayPal
+أي API بيطلب signature validation
+⚠️ إمتى ما تحتاجوش؟
+CRUD APIs عادية
+forms
+REST APIs standard
+
+👉 سيب Nest يدير الموضوع وخلاص
+
+🔥 الخلاصة المهمة
+Nest بيعمل parsing تلقائي → قبل middleware
+ده ممكن يكسر أي logic محتاج raw body
+الحل:
+bodyParser: false
+أو custom verify
+💡 Insight مهم (Senior level)
+
+مش كل middleware بيتأثر 👇
+
+👉 بس اللي بيعتمد على:
+
+raw request stream
+exact byte sequence
+<!-- ############################################  -->
+<!-- ############################################  -->
+<!-- ############################################  -->
+<!-- ############################################  -->
+<!-- ############################################  -->
+<!-- ############################################  -->
+<!-- ############################################  -->
 <!-- ############################################  -->
 <!-- ############################################  -->
 <!-- ############################################  -->

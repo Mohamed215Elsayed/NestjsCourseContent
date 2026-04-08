@@ -5,7 +5,7 @@ import { UpdateUserDto } from './dtos/update-user.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { UserResponseDto } from './dtos/users-response.dto';
 import { plainToInstance } from 'class-transformer';
-import { CustomHttpException } from '../common/filters/exceptions/custom-http.exceptions';
+// import { CustomHttpException } from '../common/filters/exceptions/custom-http.exceptions';
 // import { APP_NAME, USER_HABITS ,USER_HABITSCOMPLEX,AliasedLoggerService} from './user.constants';
 
 // @Injectable({ scope: Scope.REQUEST})//ين كل المستخدمينRequest → نسخة لكل Request

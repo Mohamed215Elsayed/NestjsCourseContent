@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { CustomExceptionFilter } from './common/filters/custom-exception/custom-exception.filter';
+// import { LoggerMiddleware } from './common/middlewares/logger/logger.middleware';
+// import { AuthGuard } from './common/guards/auth/auth.guard';
 // import { WrapDataInterceptor } from './common/interceptors/wrap-data/wrap-data.interceptor';
 
 async function bootstrap() {
@@ -18,6 +20,8 @@ async function bootstrap() {
         enableImplicitConversion: true,//دي بتخلي Nest يحوّل الأنواع تلقائيًا بناءً على الـ DTO
       }
     }));
+    // app.use(LoggerMiddleware);//for Global middleware
+    // app.useGlobalGuards(new AuthGuard())
   // app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
   // app.useGlobalInterceptors(new WrapDataInterceptor());
   app.useGlobalFilters(new CustomExceptionFilter())//for HttpException only , new layer for Http only
